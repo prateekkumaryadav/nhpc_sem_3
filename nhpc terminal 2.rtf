@@ -1,0 +1,126 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red19\green88\blue253;\red21\green163\blue3;
+}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c7811\c45139\c99506;\cssrgb\c0\c68439\c0;
+}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \CocoaLigature0 prateek@Macintosh ~ % ssh student4@172.16.201.12\
+(student4@172.16.201.12) Password: \
+(student4@172.16.201.12) Password: \
+Last failed login: Fri Aug 21 15:45:51 IST 2026 from 172.16.131.190 on ssh:notty\
+There was 1 failed login attempt since the last successful login.\
+Last login: Fri Aug 21 15:04:11 2026 from 172.16.60.129\
+[student4@master ~]$ ls\
+\cf3 BT2024004\cf2   \cf3 BT2024052\cf2   \cf3 BT2024200\cf2   \cf3 IMT2024022\cf2   \cf3 MT2025093\cf2   \cf4 rdma_test\cf2   rdma_test.c\
+[student4@master ~]$ more rdma_test.c \
+#include <infiniband/verbs.h>\
+#include <stdio.h>\
+#include <stdlib.h>\
+#include <string.h>\
+\
+int main() \{\
+    printf("Starting RDMA Setup...\\n");\
+\
+    // 1. Find the RDMA Device\
+    int num_devices;\
+    struct ibv_device **dev_list = ibv_get_device_list(&num_devices);\
+    \
+    if (!dev_list || num_devices == 0) \{\
+        fprintf(stderr, "ERROR: No RDMA devices found on this system!\\n");\
+        fprintf(stderr, "This is expected on a standard laptop without an RDMA N\
+IC or SoftRoCE emulator.\\n");\
+        return 1;\
+    \}\
+    printf("Found %d RDMA device(s).\\n", num_devices);\
+\
+    // Open the first device found\
+    struct ibv_context *context = ibv_open_device(dev_list[0]);\
+    if (!context) \{\
+        fprintf(stderr, "ERROR: Failed to open device.\\n");\
+        return 1;\
+    \}\
+\
+    // 2. Allocate a Protection Domain (PD)\
+    struct ibv_pd *pd = ibv_alloc_pd(context);\
+    if (!pd) \{\
+        fprintf(stderr, "ERROR: Failed to allocate PD.\\n");\
+        return 1;\
+    \}\
+\
+    // 3. Memory Registration (Pinning the RAM)\
+    int buffer_size = 1024;\
+    char *buffer = (char *)malloc(buffer_size);\
+    strcpy(buffer, "Hello RDMA World!");\
+    \
+    struct ibv_mr *mr = ibv_reg_mr(pd, buffer, buffer_size, \
+                                   IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WR\
+ITE);\
+    if (!mr) \{\
+        fprintf(stderr, "ERROR: Failed to register memory.\\n");\
+        return 1;\
+    \}\
+    printf("Memory registered successfully. Local Key: %u\\n", mr->lkey);\
+\
+    // 4. Create Completion Queue (CQ)\
+    struct ibv_cq *cq = ibv_create_cq(context, 10, NULL, NULL, 0);\
+\
+    // 5. Create Queue Pair (QP)\
+    struct ibv_qp_init_attr qp_attr;\
+    memset(&qp_attr, 0, sizeof(qp_attr));\
+    qp_attr.send_cq = cq;\
+    qp_attr.recv_cq = cq;\
+    qp_attr.qp_type = IBV_QPT_RC; // Reliable Connection\
+    qp_attr.cap.max_send_wr = 10;\
+    qp_attr.cap.max_recv_wr = 10;\
+    qp_attr.cap.max_send_sge = 1;\
+    qp_attr.cap.max_recv_sge = 1;\
+\
+    struct ibv_qp *qp = ibv_create_qp(pd, &qp_attr);\
+    if (!qp) \{\
+        fprintf(stderr, "ERROR: Failed to create Queue Pair.\\n");\
+        return 1;\
+    \}\
+    printf("Queue Pair created successfully.\\n");\
+\
+    // 6. Build the Scatter/Gather Element (SGE)\
+    struct ibv_sge sge;\
+    memset(&sge, 0, sizeof(sge));\
+    sge.addr = (uintptr_t)buffer;\
+    sge.length = buffer_size;\
+    sge.lkey = mr->lkey;\
+\
+    // 7. Build the Work Request (WR)\
+    struct ibv_send_wr send_wr, *bad_wr = NULL;\
+    memset(&send_wr, 0, sizeof(send_wr));\
+    send_wr.wr_id = 1;\
+    send_wr.sg_list = &sge;\
+    send_wr.num_sge = 1;\
+    send_wr.opcode = IBV_WR_SEND;\
+    send_wr.send_flags = IBV_SEND_SIGNALED;\
+\
+    printf("Code execution reached the post_send step. (Skipping actual send sin\
+ce no remote connection exists).\\n");\
+\
+    // Clean up\
+    ibv_destroy_qp(qp);\
+    ibv_destroy_cq(cq);\
+    ibv_dereg_mr(mr);\
+    ibv_dealloc_pd(pd);\
+    ibv_close_device(context);\
+    ibv_free_device_list(dev_list);\
+    free(buffer);\
+\
+    return 0;\
+\}\
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+[student4@master ~]$ \
+}
