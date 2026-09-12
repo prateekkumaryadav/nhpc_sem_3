@@ -1,0 +1,19 @@
+1. RDMA Write vs. Send/Recv (The Zero-Copy Advantage)
+
+Small Messages (1B - 1KB): Both Send/Recv and RDMA Write sit around ~8.8µs. Because you are using RDMA Write with Immediate, the receiving NIC still has to generate a Completion Queue Entry (CQE) to deliver the immediate data, so the latency overhead is almost identical to a standard Send.
+
+The "Sweet Spot" (2KB - 16KB): Look at the divergence here. Send/Recv latency increases to ~12-13µs, while RDMA Write stays completely flat at ~8.8µs. This is RDMA shining! Send/Recv requires the receiving NIC to match incoming packets against a queue of receive buffers. RDMA Write bypasses this completely—the sender's NIC writes the payload directly into the receiver's memory via DMA.
+
+Large Messages (>64KB): Both scale linearly because the bottleneck transitions from CPU/Processing overhead to raw network/PCIe bandwidth. RDMA Write remains consistently faster (e.g., 744µs vs 761µs at 4MB).
+
+2. The Cost of Memory Registration (MR)
+Your table perfectly illustrates the most important rule of RDMA programming: Memory registration is incredibly slow.
+
+Base Overhead: Registering a single byte takes ~31µs—more than three times longer than sending the data across the network! This is because ibv_reg_mr requires a context switch into the kernel to pin the physical memory pages and load translation tables into the NIC's IOMMU.
+
+Scaling: Notice how registration stays flat around ~27-30µs until about 256KB, where it starts spiking dramatically (up to 184µs for 4MB). This is the kernel spending CPU cycles pinning a massive number of 4KB pages.
+
+The Takeaway: This data proves why RDMA applications never register memory on the critical data path. They pre-allocate and register massive memory pools at startup to avoid this penalty.
+
+3. The 32-byte Anomaly
+You might notice a weird spike at 32 bytes for Send/Recv (19.21µs). Don't worry about this—it is classic system jitter (an OS background task, a CPU interrupt, or thread scheduling occurring exactly when that measurement was taken). It's completely normal in benchmarks run on non-isolated operating systems
