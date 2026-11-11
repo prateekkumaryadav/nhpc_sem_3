@@ -1,0 +1,5 @@
+To verify if Base MPI is using shared memory (vmsplice/CMA) on the same host vs physical network InfiniBand, run with node mapping:
+
+Bash
+mpicc -O3 -std=gnu99 -o mpi-latency mpi-latency.c myverbs.c -libverbs
+mpirun -np 2 --map-by node ./mpi-latency 0 1 2

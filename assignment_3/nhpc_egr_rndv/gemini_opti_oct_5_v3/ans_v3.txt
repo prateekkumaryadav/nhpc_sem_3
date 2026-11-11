@@ -1,0 +1,44 @@
+[student4@master assignment-3-october-5_g_opt_v3]$ mpicc -O3 -std=gnu99 -o mpi-latency mpi-latency.c myverbs.c -libverbs
+[student4@master assignment-3-october-5_g_opt_v3]$ mpirun -np 2 ./mpi-latency 0 1 0
+Mode: Base MPI | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096         2.64
+      8192         3.91
+     16384         6.43
+     32768        11.99
+     65536        11.69
+    131072        16.19
+    262144        29.38
+    524288        55.31
+   1048576       111.49
+   2097152       221.63
+   4194304       435.99
+[student4@master assignment-3-october-5_g_opt_v3]$ mpirun -np 2 ./mpi-latency 0 1 1
+Mode: Verbs Eager | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096         8.84
+      8192        14.48
+     16384        18.01
+     32768        24.23
+     65536        36.24
+    131072        66.74
+    262144        91.03
+    524288       137.09
+   1048576       230.27
+   2097152       416.39
+   4194304       787.95
+[student4@master assignment-3-october-5_g_opt_v3]$ mpirun -np 2 ./mpi-latency 0 1 2
+Mode: Verbs Rendezvous (Pre-registered) | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096         8.84
+      8192         8.90
+     16384         9.38
+     32768        11.66
+     65536        16.49
+    131072        27.51
+    262144        49.10
+    524288        94.35
+   1048576       185.09
+   2097152       366.15
+   4194304       729.10
+[student4@master assignment-3-october-5_g_opt_v3]$ 

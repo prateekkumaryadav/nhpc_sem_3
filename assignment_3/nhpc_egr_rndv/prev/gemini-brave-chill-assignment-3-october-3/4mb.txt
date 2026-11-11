@@ -1,0 +1,43 @@
+[student4@master assignment-3-october-3]$ mpirun -np 2 ./mpi-latency 0 1 0
+Mode: Standard MPI | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096         2.63
+      8192         3.93
+     16384         6.41
+     32768        11.06
+     65536        11.22
+    131072        16.02
+    262144        28.93
+    524288        53.75
+   1048576       118.82
+   2097152       240.16
+   4194304       467.96
+[student4@master assignment-3-october-3]$ mpirun -np 2 ./mpi-latency 0 1 1
+Mode: Verbs Eager | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096         9.08
+      8192        23.12
+     16384        16.39
+     32768        29.27
+     65536        30.43
+    131072        53.81
+    262144      1059.81
+    524288      3199.37
+   1048576      7479.19
+   2097152     16261.37
+   4194304     35414.47
+[student4@master assignment-3-october-3]$ mpirun -np 2 ./mpi-latency 0 1 2
+Mode: Verbs Rendezvous | Latency Benchmark (src=0, dst=1)
+      Size   Latency (usecs)
+      4096       188.36
+      8192       222.88
+     16384       204.66
+     32768       209.96
+     65536       286.80
+    131072       183.22
+    262144       244.30
+    524288       816.22
+   1048576      1087.23
+   2097152      1584.64
+   4194304      2115.12
+   

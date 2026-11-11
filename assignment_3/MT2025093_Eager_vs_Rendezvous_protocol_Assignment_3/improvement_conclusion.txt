@@ -1,0 +1,48 @@
+Analysis of the Benchmark Progression
+  1. Initial Unoptimized Code (dir - assignment-3-october-3):
+      Verbs Eager: 
+        - Suffered severe performance degradation for messages >128 KB, ballooning to ~35.4 ms at 4 MB. This was caused by sequential stop-and-wait polling loops (ibv_poll_cq) after every single chunk.
+      Verbs Rendezvous: 
+        - On-the-fly Memory Registration (ibv_reg_mr) inside the transfer critical path introduced massive OS memory pin overhead (~188 µs baseline latency for just 4 KB).
+        
+  2. Pre-Registered Memory & QP Optimization (dir - assignment-3-october-5):
+      Verbs Rendezvous Optimization: 
+        - Moving ibv_reg_mr out of the transfer hot path into initialization reduced 4 KB latency from 188.36 µs down to 8.85 µs (a 21.2x reduction) and 4 MB latency from 2115 µs down to 813 µs.
+      
+      Verbs Eager: 
+        - Remained bottlenecked at large sizes (33.3 ms at 4 MB) due to lock-step serial chunking.
+    
+  3. Pipelined Double-Buffering Optimization (dir - assignment-3-october-5_g_opt_v3):
+      Verbs Eager Optimization: 
+        - Introducing sliding-window double-buffering eliminated the lock-step CPU stalls. 4 MB transfer time dropped from 33.39 ms down to 0.78 ms (a 42.3x performance boost).
+      
+      Verbs Rendezvous (Pre-registered): 
+        - Achieved a clean 729.10 µs latency at 4 MB, approaching base MPI levels.
+  
+Key Technical Improvements
+  1. Eliminated Dynamic Memory Registration Overhead in Rendezvous Mode:
+      What was done: 
+        - Replaced on-the-fly buffer registration (ibv_reg_mr/ibv_dereg_mr) during data transfers with pre-registered user buffers during initial setup.
+      Impact: 
+        - Dropped small-message baseline latency from ~188 µs to 8.8 µs by completely eliminating expensive kernel page-pinning operations from the critical path.
+    
+  2. Implemented Double-Buffered Pipelining in Eager Mode:
+      What was done: 
+        - Transitioned from a strict stop-and-wait transfer model to an asynchronous double-buffering window that keeps up to two chunks in-flight before waiting on completion queue (CQ) events.
+      
+      Impact: 
+        - Drastically reduced sender stall time, cutting 4 MB Eager transfer latency from 33,396 µs (33.3 ms) down to 787 µs (0.78 ms).
+      
+  3. Optimized Queue Pair (QP) Setup and Parameters:
+      What was done: 
+        - Properly configured QP attributes for RC (Reliable Connection) mode with IBV_SEND_SIGNALED flags, optimized MTU sizes (4096 bytes), and aligned buffer allocations to cache line boundaries (posix_memalign).
+        
+      Impact: 
+        - Ensured maximum network adapter throughput and prevented Queue Pair completion stalls under heavy workload stress.
+  
+  4. Reduced Small Message Bus Latency via Inline Data Placement:
+      What was done: 
+        - Applied the IBV_SEND_INLINE flag for payloads under the inline threshold to pack data directly inside the Work Request (WR).
+      
+      Impact: 
+        - Avoided PCIe bus DMA fetch roundtrips on the Host Channel Adapter (HCA) for small-payload transmissions.

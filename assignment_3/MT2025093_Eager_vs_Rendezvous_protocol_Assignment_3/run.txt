@@ -1,0 +1,11 @@
+# Compiling single combined file
+mpicc -O3 -std=gnu99 -o combined combined.c -libverbs
+
+# Run Base MPI (Mode 0)
+mpirun -np 2 ./combined 0 1 0
+
+# Run Verbs Eager (Mode 1)
+mpirun -np 2 ./combined 0 1 1
+
+# Run Verbs Rendezvous (Mode 2)
+mpirun -np 2 ./combined 0 1 2

@@ -1,0 +1,28 @@
+[student4@master as_3]$ mpirun -np 2 ./mpi-latency
+Latency benchmark between src_rank=0 and dst_rank=1
+Latency benchmark between src_rank=0 and dst_rank=1
+      Size   Latency (usecs) usecs
+         1         1.01
+         2         0.96
+         4         0.74
+         8         0.72
+        16         0.72
+        32         0.81
+        64         0.88
+       128         1.04
+       256         1.02
+       512         1.07
+      1024         1.37
+      2048         1.52
+      4096         2.15
+      8192         3.48
+     16384         5.49
+     32768         9.90
+     65536        10.34
+    131072        15.23
+    262144        29.18
+    524288        57.24
+   1048576       109.04
+   2097152       240.27
+   4194304       436.67
+[student4@master as_3]$ 
